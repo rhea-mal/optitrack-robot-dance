@@ -44,8 +44,11 @@ Simulating and visualizing the coordinated motion of humanoid robots using data 
 
 4. **Run Simviz-Stage.cpp**:
    ```./simviz-stage
-5. **Run Toro-controller.cpp**:
-   '''./toro-controller
+   
+   ```./simviz-stage
+   
+6. **Run Toro-controller.cpp**:
+   ```./toro-controller
 
 License
 This project is licensed under the MIT License. See the LICENSE file for details.

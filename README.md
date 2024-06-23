@@ -40,15 +40,19 @@ Simulating and visualizing the coordinated motion of humanoid robots using data 
   ''rm -rf build ''
 
 3. **Stream Data**:
-   - Manually set the IP of your laptop to `172.24.68.64` (System Preferences -> Network).
+   ```sh
+   cd optitrack
+   python3 StreamData.py 
+
 
 4. **Run Simviz-Stage.cpp**:
-   ```./simviz-stage
-   
-   ```./simviz-stage
+  ```sh
+   cd bin/optitrack
+   ./simviz-stage
    
 6. **Run Toro-controller.cpp**:
-   ```./toro-controller
+   ```sh
+   ./toro-controller
 
 License
 This project is licensed under the MIT License. See the LICENSE file for details.

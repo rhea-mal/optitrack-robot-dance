@@ -1,6 +1,7 @@
 # Humanoid Robotic Motion Mapping from OptiTrack for Visualizations in Coordinated Motion
 ## Stanford Robotics Center - Human Fluid Dance Motion Mapping to Toro Robots
 Simulating and visualizing the coordinated motion of humanoid robots using data from OptiTrack motion capture systems. The simulation includes multiple humanoid robots (toros) replicating human fluid dance, showcasing synchronized and coordinated robotic motions.
+<img width="790" alt="Screenshot 2024-06-23 at 3 17 31 PM" src="https://github.com/rhea-mal/optitrack-robot-dance/assets/70975260/197db16d-4a4a-4306-8480-38afe2adef86">
 
 ## Setup and Installation
 

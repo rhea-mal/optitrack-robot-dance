@@ -35,18 +35,23 @@ Simulating and visualizing the coordinated motion of humanoid robots using data 
    mkdir build
    cd build
    cmake .. && make -j4
+   ```
 
   If you modify the code, delete the build directory before rebuilding:
   ```rm -rf build
+   ```
 
 3. **Stream Data**:
    ```cd optitrack
-   python3 StreamData.py 
+   python3 StreamData.py
+    ```
 
 
 4. **Run Simviz-Stage.cpp**:
   ```cd bin/optitrack
    ./simviz-stage
+    ```
    
 6. **Run Toro-controller.cpp**:
    ```./toro-controller
+    ```

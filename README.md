@@ -38,20 +38,32 @@ Simulating and visualizing the coordinated motion of humanoid robots using data 
    ```
 
   If you modify the code, delete the build directory before rebuilding:
-  ```rm -rf build
-   ```
+  ```rm -rf build```
 
 3. **Stream Data**:
    ```cd optitrack
    python3 StreamData.py
-    ```
-
+   ```
 
 4. **Run Simviz-Stage.cpp**:
   ```cd bin/optitrack
    ./simviz-stage
-    ```
+  ```
    
 6. **Run Toro-controller.cpp**:
    ```./toro-controller
-    ```
+   ```
+
+### Step 3: Visualization Effects
+1. **Chose # of Robots **:
+   - Currently 1, 3, or 10
+   - Set NUM_ROBOTS constant in simviz.cpp
+
+2. **Chose background & stage textures**:
+   - Chose jpg from "Assets" and set background in simviz
+   - Change stage texture in urdf file
+   - working on front end tool for this
+
+3. **Delay**:
+   - Staggered motion by setting DELAY flag to true
+   - Modify simulation loop to pause between successive mappings (default set to 0.3 seconds)

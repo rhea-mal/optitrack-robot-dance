@@ -40,19 +40,18 @@ Simulating and visualizing the coordinated motion of humanoid robots using data 
   ''rm -rf build ''
 
 3. **Stream Data**:
-   ```sh
+   ```
    cd optitrack
    python3 StreamData.py 
-
+```
 
 4. **Run Simviz-Stage.cpp**:
-  ```sh
+  ```
    cd bin/optitrack
    ./simviz-stage
+   ```
    
 6. **Run Toro-controller.cpp**:
-   ```sh
+   ```
    ./toro-controller
-
-License
-This project is licensed under the MIT License. See the LICENSE file for details.
+   ```

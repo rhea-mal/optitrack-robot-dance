@@ -29,6 +29,9 @@
 bool fSimulationRunning = true;
 void sighandler(int){fSimulationRunning = false;}
 double DELAY = 2000; // simulation frequency in Hz
+std::shared_ptr<Sai2Model::Sai2Model> toro;
+std::shared_ptr<Sai2Graphics::Sai2Graphics> graphics;
+
 
 #include "redis_keys.h"
 
@@ -43,7 +46,6 @@ mutex mutex_torques, mutex_update;
 
 // specify urdf and robots 
 static const string toro_name = "toro5";
-
 static const string camera_name = "camera_fixed";
 
 const std::vector<std::string> background_paths = {
@@ -54,7 +56,7 @@ const std::vector<std::string> background_paths = {
     "../../optitrack/assets/wood.jpg"
 };
 
-void setBackground(std::shared_ptr<Sai2Graphics::Sai2Graphics>& graphics, const std::string& imagePath) {
+void setBackgroundImage(std::shared_ptr<Sai2Graphics::Sai2Graphics>& graphics, const std::string& imagePath) {
     chai3d::cBackground* background = new chai3d::cBackground();
     bool fileload = background->loadFromFile(imagePath);
     if (!fileload) {
@@ -64,45 +66,50 @@ void setBackground(std::shared_ptr<Sai2Graphics::Sai2Graphics>& graphics, const 
     graphics->getCamera(camera_name)->m_backLayer->addChild(background);
 }
 
+chai3d::cColorf lagrangianToColor(double lagrangian, double min_lagrangian, double max_lagrangian) {
+    double normalized = (lagrangian - min_lagrangian) / (max_lagrangian - min_lagrangian);
+    normalized = std::max(0.0, std::min(1.0, normalized)); // Clamp to [0, 1]
+
+    // Blue to Red gradient
+    double red = normalized;
+    double blue = 1.0 - normalized;
+    double green = 0.0;
+
+    return chai3d::cColorf(red, green, blue);
+}
+
 
 // simulation thread
 void simulation(std::shared_ptr<Sai2Simulation::Sai2Simulation> sim);
 
 
+
 int main() {
 	static const string toro_file = "./resources/model/toro.urdf";
+    static const string world_file = "./resources/world/world_basic_10.urdf";
+    std::cout << "Loading URDF world model file: " << world_file << endl;
 
-	static const string world_file = "./resources/world/world_basic_10.urdf";
-	std::cout << "Loading URDF world model file: " << world_file << endl;
+    // start redis client
+    auto redis_client = Sai2Common::RedisClient();
+    redis_client.connect();
 
-	// start redis client
-	auto redis_client = Sai2Common::RedisClient();
-	redis_client.connect();
+    // set up signal handler
+    signal(SIGABRT, &sighandler);
+    signal(SIGTERM, &sighandler);
+    signal(SIGINT, &sighandler);
 
-	// set up signal handler
-	signal(SIGABRT, &sighandler);
-	signal(SIGTERM, &sighandler);
-	signal(SIGINT, &sighandler);
-
-	// load graphics scene
-	auto graphics = std::make_shared<Sai2Graphics::Sai2Graphics>(world_file, camera_name, false);
-	// chai3d::cBackground* background = new chai3d::cBackground();
-	// std::string imagePath = "/Users/rheamalhotra/Desktop/robotics/optitrack-robot-dance/optitrack/assets/space.jpg";
-	// bool fileload = background->loadFromFile(imagePath);
-	setBackground(graphics, "../../optitrack/assets/space.jpg"); // Set background to space
-
-	
+    // load graphics scene
+    graphics = std::make_shared<Sai2Graphics::Sai2Graphics>(world_file, camera_name, false);
+    //setBackgroundImage(graphics, "../../optitrack/assets/space.jpg"); // Set background to space
     
     graphics->getCamera(camera_name)->setClippingPlanes(0.1, 2000);  // set the near and far clipping planes 
 
+    // load robots
+    toro = std::make_shared<Sai2Model::Sai2Model>(toro_file, false);
+    toro->updateModel();
+    toro_ui_torques = VectorXd::Zero(toro->dof());
+
 	//graphics->addUIForceInteraction(toro_name);
-
-	// load robots
-	auto toro = std::make_shared<Sai2Model::Sai2Model>(toro_file, false);
-
-	toro->updateModel();
-
-	toro_ui_torques = VectorXd::Zero(toro->dof());
 
 	// load simulation world
 	auto sim = std::make_shared<Sai2Simulation::Sai2Simulation>(world_file, false);
@@ -156,6 +163,24 @@ int main() {
 	while (graphics->isWindowOpen() && fSimulationRunning) {
 		timer.waitForNextLoop();
         const double time = timer.elapsedSimTime();
+
+
+		// Get the Lagrangian value from Redis
+		double lagrangian = stod(redis_client.get(LAGRANGIAN));
+
+		//double normalized_lagrangian = (lagrangian + 50.0) / 100.0;
+		// double red = fmin(fmax(0.0, lagrangian), 1.0);
+		// double green = 0.3;
+		// double blue = fmin(fmax(0.0, 1.0 - lagrangian), 1.0);
+
+        // Set the background color based on the Lagrangian value
+        //chai3d::cColorf backgroundColor(red, green, blue);
+		//graphics->setBackgroundColor(red, green, blue);
+		chai3d::cColorf backgroundColor = lagrangianToColor(lagrangian, -50.0, 200.0);
+		double red = backgroundColor.getR();
+    	double green = backgroundColor.getG();
+   		double blue = backgroundColor.getB();
+		graphics->setBackgroundColor(red, green, blue);
         
         // Update primary robot graphics
         graphics->updateRobotGraphics(toro_name, redis_client.getEigen(TORO_JOINT_ANGLES_KEY));
@@ -185,7 +210,8 @@ int main() {
 				redis_client.setInt(CLAP_KEY, current_clap_count + 1);
 
 				int background_index = (current_clap_count + 1) % background_paths.size();
-				setBackground(graphics, background_paths[background_index]);
+				//UNCOMMENT THIS
+				//setBackgroundImage(graphics, background_paths[background_index]);
 
 				// Update the last background change time
 				last_background_change_time = time;
@@ -353,14 +379,26 @@ void simulation(std::shared_ptr<Sai2Simulation::Sai2Simulation> sim) {
         sim->integrate();
 
 		VectorXd robot_q = sim->getJointPositions(toro_name);
-        VectorXd robot_dq = sim->getJointVelocities(toro_name);
+    	VectorXd robot_dq = sim->getJointVelocities(toro_name);
+        //robot_dq = 0.1 * VectorXd::Ones(robot_dq.size()) * sin(time);
+
+        // Get the mass matrix
+        MatrixXd robot_M = toro->M();
+        VectorXd g = toro->jointGravityVector();
+        double kinetic_energy = 0.5 * robot_dq.transpose() * robot_M * robot_dq;
+        double potential_energy = -robot_q.transpose() * g;
+        double lagrangian = kinetic_energy - potential_energy;
+        
+        std::cout << "Lagrangian: " << lagrangian << std::endl;
+		//redis_client.setEigen(LAGRANGIAN, to_string(lagrangian));
+		// After calculating the Lagrangian
+		redis_client.set(LAGRANGIAN, std::to_string(lagrangian));
 
         redis_client.setEigen(TORO_JOINT_ANGLES_KEY, robot_q);
         redis_client.setEigen(TORO_JOINT_VELOCITIES_KEY, robot_dq);
 
         {
             lock_guard<mutex> lock(mutex_update);
-            // Update any additional object information here
         }
     }
     timer.stop();

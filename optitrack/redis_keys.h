@@ -37,3 +37,4 @@ const std::string CLAP_KEY = "sai2::sim::toro::clap_count";
 const std::string HANDS_ABOVE_HEAD_KEY = "sai2::sim::toro::hands_above_head";
 const double CLAP_THRESHOLD = 0.61; // Threshold for clapping detection
 const double HANDS_ABOVE_HEAD_THRESHOLD = 0.4; 
+const std::string LAGRANGIAN = "sai2::sim::toro::lagrangian";

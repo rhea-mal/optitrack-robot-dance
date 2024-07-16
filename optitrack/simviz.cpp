@@ -68,6 +68,7 @@ void setBackground(std::shared_ptr<Sai2Graphics::Sai2Graphics>& graphics, const 
 // simulation thread
 void simulation(std::shared_ptr<Sai2Simulation::Sai2Simulation> sim);
 
+
 int main() {
 	static const string toro_file = "./resources/model/toro.urdf";
 
@@ -143,6 +144,7 @@ int main() {
 
 	// start simulation thread
 	thread sim_thread(simulation, sim);
+	
 	int robot_index = 0; // index to track which robot to update next
     int total_robots = 10; // total number of robots to update
 
@@ -160,11 +162,12 @@ int main() {
         
         // Update one robot graphics per iteration
         std::string name = "toro" + std::to_string(robot_index);
-        //std::cout << name << std::endl;
         graphics->updateRobotGraphics(name, redis_client.getEigen(TORO_JOINT_ANGLES_KEY));
         robot_index = (robot_index + 1) % total_robots;
+
+
 		if (robot_index == 8) {
-			changed_recently = false;
+			changed_recently = false; // better logic for this
 		}
         
 		// Retrieve the positions of the right and left end effectors (hands)
@@ -188,7 +191,7 @@ int main() {
 				last_background_change_time = time;
 				changed_recently = true;
 
-				std::cout << "Background changed to: " << background_paths[background_index] << std::endl;
+				//std::cout << "Background changed to: " << background_paths[background_index] << std::endl;
 			}
 		}
 
@@ -202,7 +205,7 @@ int main() {
 
 		double hands_above = head_pos.z() - ra_end_effector_pos.z();
 		
-		std::cout << head_pos.z() - ra_end_effector_pos.z() << std::endl;
+		//std::cout << head_pos.z() - ra_end_effector_pos.z() << std::endl;
 		// Set transparency for odd-numbered robots if hands are above the head
 		if (hands_above < 0.1) {
 			graphics->showTransparency(true, "toro0", 0.0);
@@ -221,6 +224,7 @@ int main() {
 			graphics->showTransparency(true, "toro1", 0.0);
 			graphics->showTransparency(true, "toro2", 1.0); // Fully transparent
 			graphics->showTransparency(true, "toro3", 1.0); // Fully transparent
+			graphics->showTransparency(true, "toro4", 1.0);
 			graphics->showTransparency(true, "toro4", 1.0);
 			graphics->showTransparency(true, "toro5", 1.0);
 			graphics->showTransparency(true, "toro6", 1.0); // Fully transparent
@@ -322,43 +326,45 @@ int main() {
 
 //------------------------------------------------------------------------------
 void simulation(std::shared_ptr<Sai2Simulation::Sai2Simulation> sim) {
-	// fSimulationRunning = true;
+    // fSimulationRunning = true;
 
     // create redis client
     auto redis_client = Sai2Common::RedisClient();
     redis_client.connect();
 
-	// create a timer
-	double sim_freq =2000;
-	Sai2Common::LoopTimer timer(sim_freq);
+    // create a timer
+    double sim_freq = 2000;
+    Sai2Common::LoopTimer timer(sim_freq);
 
-	sim->setTimestep(1.0 / sim_freq);
+    sim->setTimestep(1.0 / sim_freq);
     sim->enableGravityCompensation(true);
 
-	sim->enableJointLimits(toro_name);
+    sim->enableJointLimits(toro_name);
 
-	while (fSimulationRunning) {
-		timer.waitForNextLoop();
-		const double time = timer.elapsedSimTime();
+    while (fSimulationRunning) {
+        timer.waitForNextLoop();
+        const double time = timer.elapsedSimTime();
 
-		VectorXd toro_control_torques = redis_client.getEigen(TORO_JOINT_TORQUES_COMMANDED_KEY);
-		{
-			lock_guard<mutex> lock(mutex_torques);
-			sim->setJointTorques(toro_name, toro_control_torques + toro_ui_torques);
-		}
-		sim->integrate();
-        
-		redis_client.setEigen(TORO_JOINT_ANGLES_KEY, sim->getJointPositions(toro_name));
-        redis_client.setEigen(TORO_JOINT_VELOCITIES_KEY, sim->getJointVelocities(toro_name));
+        VectorXd toro_control_torques = redis_client.getEigen(TORO_JOINT_TORQUES_COMMANDED_KEY);
+        {
+            lock_guard<mutex> lock(mutex_torques);
+            sim->setJointTorques(toro_name, toro_control_torques + toro_ui_torques);
+        }
+        sim->integrate();
 
+		VectorXd robot_q = sim->getJointPositions(toro_name);
+        VectorXd robot_dq = sim->getJointVelocities(toro_name);
 
-		// update object information 
-		{
-			lock_guard<mutex> lock(mutex_update);
-			
-		}
-	}
-	timer.stop();
-	cout << "\nSimulation loop timer stats:\n";
-	timer.printInfoPostRun();
+        redis_client.setEigen(TORO_JOINT_ANGLES_KEY, robot_q);
+        redis_client.setEigen(TORO_JOINT_VELOCITIES_KEY, robot_dq);
+
+        {
+            lock_guard<mutex> lock(mutex_update);
+            // Update any additional object information here
+        }
+    }
+    timer.stop();
+    cout << "\nSimulation loop timer stats:\n";
+    timer.printInfoPostRun();
 }
+

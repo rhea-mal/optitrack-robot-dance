@@ -3,7 +3,7 @@
 
 <world name="demo_world" gravity="0.0 0.0 -3.0">
 
-	<robot name="toro0">
+	<robot name="toro">
 		<model dir="./resources" path="./model/toro.urdf" name="toro" />
 		<origin xyz="-3 0 -1.3" rpy="0 0 0" />
 	</robot>

@@ -9,6 +9,7 @@
  *
  */
 
+
 #include <math.h>
 #include <signal.h>
 #include <iostream>
@@ -42,7 +43,7 @@ using namespace Optitrack;
 
 // specify urdf and robots
 const string robot_file = "./resources/model/toro.urdf";
-const string robot_name = "toro";
+const string robot_name = "toro3";
 const string camera_name = "camera_fixed";
 
 // globals
@@ -64,7 +65,6 @@ enum State {
 // this is OT R transpose only
 Eigen::Matrix3d quaternionToRotationMatrix(const VectorXd& quat)
 {
-    //Eigen::Quaterniond q(quat[3], quat[0], quat[1], quat[2]); // Eigen::Quaterniond(w, x, y, z)
     Eigen::Quaterniond q;
     q.x() = quat[0];
     q.y() = quat[1];
@@ -97,73 +97,19 @@ Eigen::VectorXd generateRandomVector(double lowerBound, double upperBound, int s
 Matrix3d R_camera_world = Matrix3d::Identity();
 Matrix3d R_mirror;
 
-//rotate 90 degrees about x axis from optitrack to open sai
 Matrix3d R_optitrack_to_sai = AngleAxisd(- M_PI / 2, Vector3d::UnitZ()).toRotationMatrix() * AngleAxisd(M_PI / 2, Vector3d::UnitX()).toRotationMatrix();
-//Matrix3d R_optitrack_to_sai = AngleAxisd(0, Vector3d::UnitX()).toRotationMatrix();
-// rotate 90 about z axis
-//Matrix3d R_optitrack_to_sai = AngleAxisd(-M_PI/2, Vector3d::UnitZ()).toRotationMatrix() * R_optitrack_to_sai_1;
 
-// right hand [0], right elbow[1], left hand[2], left elbow[3], trunk[4], right foot[5], left foot[6], right knee[7], left knee[8], head[9]
-// for complete setup, use:
-// vector<int> primary_data_id{0, 2, 5, 6};
-// vector<int> secondary_data_id{1, 3, 7, 8, 9}
-// map<string, int> idx_map{
-//                         {"LL_foot", 5},
-//                         {"RL_foot", 6},
-//                         {"neck_link2", 9},
-//                         {"trunk", 4},
-//                         {"hip_base", 4}};
-
-// vector<int> primary_data_id{0, 2};
-// vector<int> secondary_data_id{1, 3};
-// map<string, int> idx_map{{"trunk", 4},
-//                         {"hip_base", 4}};
-// vector<int> aux_data_id{4}; // chest to track body center position and orientation
-
-// int n_primary_links = primary_data_id.size();
-// int n_secondary_links = secondary_data_id.size();
-// int n_aux_links = aux_data_id.size();
-// int num_joint_per_person = n_primary_links + n_secondary_links + n_aux_links;
-
-// map<string, Vector3d> x_tmp;
-// Matrix3d default_ori;
-// float ori_tol = 1.5, ori_reject_thres = 2.5, secondary_pos_tol = 1.2, primary_pos_tol = 1.2;
-// int app_id = 0;
-
-// vector<Matrix3d> all_ori(num_joint_per_person);
 
 int main(int argc, char** argv) {
 
-    // app_id = argv[1][0] - '0';
-    // cout << "Launch application " << app_id << endl;
-    // cout << "Loading URDF world model file: " << world_file << endl;
-
-    //sleep(10);
-
-    // start redis client
     auto redis_client = Sai2Common::RedisClient();
     redis_client.connect();
 
-    // set up signal handler(32, Matrix3d::Zero())
     signal(SIGABRT, &sighandler);
     signal(SIGTERM, &sighandler);
     signal(SIGINT, &sighandler);
 
-
-    // load robots
-    // default_ori << 0, -1, 0, 1, 0, 0, 0, 0, 1;
     auto robot = make_shared<Sai2Model::Sai2Model>(robot_file, false);
-    // nominal_posture = VectorXd::Zero(robot->dof());
-    // nominal_posture(2) = 1.57;
-    // nominal_posture(5) = 1.57;
-    // nominal_posture(5 + 2) = -0.5;
-    // nominal_posture(5 + 8) = -0.5;
-    // nominal_posture(5 + 4) = 0.7;
-    // nominal_posture(5 + 10) = 0.7;
-    // nominal_posture(5 + 14) = 0.27;
-    // nominal_posture(5 + 20) = 0.27;
-    // nominal_posture(5 + 17) = 1;
-    // nominal_posture(5 + 23) = 1;
     nominal_posture = robot->q();
     robot->updateModel();
 

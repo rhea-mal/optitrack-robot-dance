@@ -33,3 +33,7 @@ const std::string HEAD_VERT_AXIS = "sai2::sim::toro::head_vert_axis";
 const std::string HEAD_LOOK_AT = "sai2::sim::toro::head_look_at";
 
 const std::string GLOBAL_CAM = "sai2::sim::toro::global_cam";
+const std::string CLAP_KEY = "sai2::sim::toro::clap_count";
+const std::string HANDS_ABOVE_HEAD_KEY = "sai2::sim::toro::hands_above_head";
+const double CLAP_THRESHOLD = 0.61; // Threshold for clapping detection
+const double HANDS_ABOVE_HEAD_THRESHOLD = 0.4; 

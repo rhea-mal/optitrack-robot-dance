@@ -383,6 +383,17 @@ void control(std::shared_ptr<Optitrack::Human> human,
                     std::cout << "--- \n";  
                 }
 
+                // Retrieve the initial positions of the right and left end effectors (legs)
+                Eigen::Vector3d initial_rleg_pos = human->getInitialPose("RL_end_effector").translation();
+                Eigen::Vector3d initial_lleg_pos = human->getInitialPose("LL_end_effector").translation();
+
+                // Calculate the ground level as the average of the z-coordinates of the initial leg positions
+                double ground_z = (initial_rleg_pos.z() + initial_lleg_pos.z()) / 2.0;
+                Eigen::Vector3d ground_pos(0, 0, ground_z);
+
+                // Set the ground key in Redis
+                redis_client.setEigen(GROUND, ground_pos);
+
                 // get robot link initial pose
                 for (int i = 0; i < primary_control_links.size(); ++i) {
                     Affine3d link_pose = Affine3d::Identity();

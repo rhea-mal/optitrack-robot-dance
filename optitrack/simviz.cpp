@@ -194,15 +194,34 @@ int main() {
 		if (robot_index == 8) {
 			changed_recently = false; // better logic for this
 		}
-        
-		// Retrieve the positions of the right and left end effectors (hands)
+		
 		Eigen::Vector3d ra_end_effector_pos = redis_client.getEigen("sai2::optitrack::rigid_body_pos::6");
 		Eigen::Vector3d la_end_effector_pos = redis_client.getEigen("sai2::optitrack::rigid_body_pos::3");
 
 		// Calculate the L2 norm of the difference between the end effectors
 		double l2_norm = (ra_end_effector_pos - la_end_effector_pos).norm();
-		
+		//std::cout << "l2_norm: " << l2_norm << std::endl;
+
 		double last_background_change_time = 0.0; // Initialize the last background change time
+
+		// //double ground_threshold = redis_client.getEigen("sai2::optitrack::ground"); // Adjust this value as per your requirement
+		// Eigen::Vector3d ground_threshold = redis_client.getEigen(GROUND);
+    	// double ground_z = ground_threshold.z();  // Extract the z component
+
+		// // Retrieve the current positions of the right and left end effectors (legs)
+		// Eigen::Vector3d current_rleg_pos = redis_client.getEigen("sai2::optitrack::rigid_body_pos::5");
+		// Eigen::Vector3d current_lleg_pos = redis_client.getEigen("sai2::optitrack::rigid_body_pos::2");
+
+		// // Check if both legs are off the ground relative to their initial positions
+		// bool isJumping = (current_rleg_pos.z() > ground_threshold) &&
+		// 				(current_lleg_pos.z() > ground_threshold);
+
+		// // Print the status
+		// if (isJumping) {
+		// 	std::cout << "The robot is jumping!" << std::endl;
+		// } else {
+		// 	std::cout << "The robot is not jumping." << std::endl;
+		// }
 
 		if (l2_norm < CLAP_THRESHOLD) {
 			if (!changed_recently) {
@@ -230,6 +249,7 @@ int main() {
 		redis_client.setBool(HANDS_ABOVE_HEAD_KEY, hands_above_head);
 
 		double hands_above = head_pos.z() - ra_end_effector_pos.z();
+		std::cout << hands_above << std::endl;
 		
 		//std::cout << head_pos.z() - ra_end_effector_pos.z() << std::endl;
 		// Set transparency for odd-numbered robots if hands are above the head
@@ -389,7 +409,7 @@ void simulation(std::shared_ptr<Sai2Simulation::Sai2Simulation> sim) {
         double potential_energy = -robot_q.transpose() * g;
         double lagrangian = kinetic_energy - potential_energy;
         
-        std::cout << "Lagrangian: " << lagrangian << std::endl;
+        //std::cout << "Lagrangian: " << lagrangian << std::endl;
 		//redis_client.setEigen(LAGRANGIAN, to_string(lagrangian));
 		// After calculating the Lagrangian
 		redis_client.set(LAGRANGIAN, std::to_string(lagrangian));

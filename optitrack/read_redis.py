@@ -6,7 +6,7 @@ from datetime import datetime
 # Redis configuration
 REDIS_HOST = '127.0.0.1'
 REDIS_PORT = 6379
-OUTPUT_FILE = '/Users/rheamalhotra/Desktop/robotics/optitrack-robot-dance/optitrack/recordings/simple1.txt'  # Single output file for all data
+OUTPUT_FILE = '/Users/rheamalhotra/Desktop/robotics/optitrack-robot-dance/optitrack/recordings/lagrangian1.txt'  # Single output file for all data
 
 # Specific keys for rigid body positions and orientations
 RIGID_BODY_POSITION_KEYS = [
